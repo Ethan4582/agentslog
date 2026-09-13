@@ -8,7 +8,7 @@ export function HowItWorksSection() {
       title: "Wrap your SDK client once",
       description:
         "One wrapper function wraps Anthropic, OpenAI, DeepSeek, or Vercel AI SDK clients. Method signatures and TypeScript types stay 100% identical.",
-      code: "import { wrap } from 'agentlog';\nconst client = wrap(new Anthropic());"
+      code: "import { wrap } from 'agent-logs';\nconst client = wrap(new Anthropic());"
     },
     {
       number: "02",
@@ -24,7 +24,7 @@ export function HowItWorksSection() {
       title: "Export standalone HTML",
       description:
         "Generate a self-contained, beautifully styled single-file HTML report ready to open in any browser or push to GitHub Gist with a single command.",
-      code: "npx agentlog export --type interview\n✔ Saved to agentlog-exports/..."
+      code: "npx agent-logs export --type interview\n✔ Saved to agentlog-exports/..."
     }
   ];
 

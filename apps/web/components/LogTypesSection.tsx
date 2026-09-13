@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Bug, FileCheck, Award, CheckCircle2, ChevronRight } from "lucide-react";
+import { Check, Copy, Sparkles, BookOpen, Bug, ShieldCheck, Briefcase } from "lucide-react";
 
 type LogTypeKey = "interview" | "debug" | "audit" | "portfolio";
 
-interface LogTypeInfo {
+interface LogTypeConfig {
   key: LogTypeKey;
   title: string;
   badge: string;
@@ -14,14 +14,14 @@ interface LogTypeInfo {
   cliFlag: string;
   placeholderBadge: string;
   placeholderHeader: string;
-  placeholderLines: Array<{ label: string; value: string }>;
+  placeholderLines: { label: string; value: string }[];
 }
 
-const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
+const LOG_TYPES: Record<LogTypeKey, LogTypeConfig> = {
   interview: {
     key: "interview",
     title: "Interview Log",
-    badge: "Story-Driven",
+    badge: "Reasoning & Narrative",
     description:
       "Translates raw AI transcripts into a structured narrative. Perfect for hiring managers and technical leads to evaluate your problem framing, architectural tradeoffs, and reasoning flow.",
     features: [
@@ -30,7 +30,7 @@ const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
       "Curated tool invocations & stdout snippets",
       "Lessons learned & post-session retrospective"
     ],
-    cliFlag: "npx agentlog export --type interview",
+    cliFlag: "npx agent-logs export --type interview",
     placeholderBadge: "Interview Log Preview",
     placeholderHeader: "Session Narrative: Autonomous Migration to Bun Runtimes",
     placeholderLines: [
@@ -52,7 +52,7 @@ const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
       "Raw tool arguments and output payloads",
       "Explicit error codes, warnings, and retry states"
     ],
-    cliFlag: "npx agentlog export --type debug",
+    cliFlag: "npx agent-logs export --type debug",
     placeholderBadge: "Debug Log Preview",
     placeholderHeader: "Trace Telemetry: Call #34 - Tool Invocation Failure & Recovery",
     placeholderLines: [
@@ -74,7 +74,7 @@ const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
       "Itemized token pricing and total cost ledger",
       "Client-side secret redaction certification"
     ],
-    cliFlag: "npx agentlog export --type audit",
+    cliFlag: "npx agent-logs export --type audit",
     placeholderBadge: "Audit Log Preview",
     placeholderHeader: "Compliance Ledger: Model Checkpoints & Cost Accounting",
     placeholderLines: [
@@ -96,7 +96,7 @@ const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
       "Architecture diagram & component tree",
       "Minimalist presentation ready for social sharing"
     ],
-    cliFlag: "npx agentlog export --type portfolio",
+    cliFlag: "npx agent-logs export --type portfolio",
     placeholderBadge: "Portfolio Log Preview",
     placeholderHeader: "Project Showcase: Automated Event Pipeline Engine",
     placeholderLines: [
@@ -108,130 +108,130 @@ const LOG_TYPES: Record<LogTypeKey, LogTypeInfo> = {
   }
 };
 
+const TYPE_ICONS: Record<LogTypeKey, React.ComponentType<{ className?: string }>> = {
+  interview: BookOpen,
+  debug: Bug,
+  audit: ShieldCheck,
+  portfolio: Briefcase
+};
+
 export function LogTypesSection() {
-  const [activeTab, setActiveTab] = useState<LogTypeKey>("interview");
-  const active = LOG_TYPES[activeTab];
+  const [activeKey, setActiveKey] = useState<LogTypeKey>("interview");
+  const [copied, setCopied] = useState(false);
+
+  const active = LOG_TYPES[activeKey];
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(active.cliFlag);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <section id="log-types" className="mx-auto max-w-7xl px-6 py-28 border-t border-[#222222]">
-      <div className="text-left mb-16">
-        <span className="text-[13px] font-semibold uppercase tracking-wider text-[#f5a623]">
-          Export Engine
+    <section id="log-types" className="mx-auto max-w-7xl px-6 py-24 text-center">
+      <div className="mx-auto max-w-3xl space-y-4">
+        <span className="text-[12px] font-semibold uppercase tracking-wider text-[#f5a623]">
+          Multi-Purpose Export
         </span>
-        <h2 className="type-h2 mt-3 text-white">
-          Four purpose-built log formats.
-        </h2>
-        <p className="type-body mt-4 max-w-2xl text-[#a0a0a0]">
+        <h2 className="type-h2 text-white">One session recording. Four tailored formats.</h2>
+        <p className="type-body text-[#9ca3af]">
           Every AI coding session produces different stakeholders. AgentLogs converts raw traces into the exact format you need with a single command.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-[#222222] pb-4 mb-8">
-        {(
-          [
-            { key: "interview", label: "Interview Log", icon: MessageSquare },
-            { key: "debug", label: "Debug Log", icon: Bug },
-            { key: "audit", label: "Audit Log", icon: FileCheck },
-            { key: "portfolio", label: "Portfolio Log", icon: Award }
-          ] as const
-        ).map((tab) => {
-          const Icon = tab.icon;
-          const isSelected = activeTab === tab.key;
+      {/* Tabs */}
+      <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
+        {(Object.keys(LOG_TYPES) as LogTypeKey[]).map((key) => {
+          const item = LOG_TYPES[key];
+          const Icon = TYPE_ICONS[key];
+          const isActive = activeKey === key;
           return (
             <button
-              key={tab.key}
+              key={key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-[14px] font-medium transition-all cursor-pointer ${
-                isSelected
-                  ? "bg-[#202020] text-white border border-[#333333] shadow-sm"
-                  : "text-[#888888] hover:text-[#d4d4d4] hover:bg-[#181818]"
+              onClick={() => setActiveKey(key)}
+              className={`flex items-center gap-2 rounded-xl px-5 py-3 text-[14px] font-medium transition-all cursor-pointer ${
+                isActive
+                  ? "bg-[#222222] text-white border border-[#383838] shadow-md ring-1 ring-white/10"
+                  : "text-[#888888] hover:text-[#ededed] hover:bg-[#181818] border border-transparent"
               }`}
             >
-              <Icon className={`h-4 w-4 ${isSelected ? "text-[#f5a623]" : "text-[#737373]"}`} />
-              <span>{tab.label}</span>
+              <Icon className={`h-4 w-4 ${isActive ? "text-[#f5a623]" : "text-[#777777]"}`} />
+              <span>{item.title}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start text-left">
-        <div className="lg:col-span-5 space-y-6">
-          <div>
-            <span className="inline-block rounded bg-[#f5a623]/10 px-2.5 py-1 text-[11px] font-mono font-semibold text-[#f5a623] border border-[#f5a623]/20">
-              {active.badge}
-            </span>
-            <h3 className="text-[26px] font-semibold text-white tracking-tight mt-3">
-              {active.title}
-            </h3>
-            <p className="text-[15px] leading-relaxed text-[#a0a0a0] mt-3">
-              {active.description}
-            </p>
-          </div>
+      {/* Detailed Card */}
+      <div className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl border border-[#252525] bg-[#161616] text-left shadow-xl">
+        <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#242424]">
+          {/* Metadata side */}
+          <div className="md:col-span-6 p-8 flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#2e2e2e] bg-[#1d1d1d] px-3 py-1 font-mono text-[11px] text-[#f5a623]">
+                <Sparkles className="h-3 w-3" />
+                <span>{active.badge}</span>
+              </div>
+              <h3 className="text-[24px] font-bold text-white tracking-tight">{active.title}</h3>
+              <p className="text-[14px] text-[#a0a0a0] leading-relaxed">{active.description}</p>
 
-          <div className="space-y-2.5 pt-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-[#737373]">
-              Included in this export:
-            </span>
-            <ul className="space-y-2 text-[14px] text-[#d4d4d4]">
-              {active.features.map((feat) => (
-                <li key={feat} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-[#f5a623] shrink-0 mt-0.5" />
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+              <ul className="space-y-2.5 pt-2">
+                {active.features.map((feat) => (
+                  <li key={feat} className="flex items-start gap-2.5 text-[13px] text-zinc-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#f5a623] mt-2 shrink-0"></span>
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="pt-4 border-t border-[#222222]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#737373] block mb-2">
-              CLI Export Command
-            </span>
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#161616] p-3 font-mono text-[12px] text-emerald-400">
-              {active.cliFlag}
+            <div className="pt-4 border-t border-[#222222]">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-[#888888] mb-2">
+                Generate via CLI
+              </div>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="w-full flex items-center justify-between rounded-xl border border-[#2a2a2a] bg-[#121212] p-3 font-mono text-[12px] text-zinc-300 hover:border-[#f5a623] transition-all cursor-pointer"
+              >
+                <span className="truncate mr-2">{active.cliFlag}</span>
+                {copied ? <Check className="h-4 w-4 text-emerald-400 shrink-0" /> : <Copy className="h-4 w-4 text-zinc-500 shrink-0" />}
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-7">
-          <div className="rounded-2xl border border-[#262626] bg-[#161616] p-6 shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-[#242424] pb-4 mb-5">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]/70"></span>
-                <span className="h-2.5 w-2.5 rounded-full bg-[#f59e0b]/70"></span>
-                <span className="h-2.5 w-2.5 rounded-full bg-[#10b981]/70"></span>
-                <span className="ml-2 font-mono text-[12px] text-[#888888]">
+          {/* Report Preview side */}
+          <div className="md:col-span-6 p-8 bg-[#131313] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-[#242424] pb-3 mb-5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#888888]">
                   {active.placeholderBadge}
                 </span>
-              </div>
-              <span className="font-mono text-[11px] text-[#737373]">
-                Single-file HTML &bull; Zero CDN
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-[#242424] bg-[#121212] p-5 space-y-4">
-              <div className="border-b border-[#202020] pb-3">
-                <span className="text-[11px] font-mono text-[#f5a623] uppercase">Export Output</span>
-                <h4 className="text-[16px] font-medium text-white mt-1">
-                  {active.placeholderHeader}
-                </h4>
-              </div>
-
-              <div className="space-y-3 font-mono text-[12px]">
-                {active.placeholderLines.map((line) => (
-                  <div key={line.label} className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 border-b border-[#1c1c1c] pb-2">
-                    <span className="text-[#888888] shrink-0 sm:w-32">{line.label}:</span>
-                    <span className="text-[#d4d4d4] break-all">{line.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2 flex items-center justify-between text-[11px] text-[#666666]">
-                <span>Generated by agentlog engine</span>
-                <span className="flex items-center gap-1 text-[#f5a623]">
-                  Ready to share <ChevronRight className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Validated Output
                 </span>
               </div>
+
+              <div className="rounded-xl border border-[#252525] bg-[#171717] p-5 space-y-4 font-mono">
+                <div className="text-[13px] font-semibold text-white border-b border-[#252525] pb-2 leading-snug">
+                  {active.placeholderHeader}
+                </div>
+
+                <div className="space-y-3 text-[12px]">
+                  {active.placeholderLines.map((line) => (
+                    <div key={line.label} className="space-y-1">
+                      <div className="text-[#888888] text-[10px] uppercase tracking-wider">{line.label}</div>
+                      <div className="text-zinc-200 leading-relaxed font-sans">{line.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between text-[11px] text-[#666666] font-mono">
+              <span>Standalone HTML &bull; Zero CDN dependencies</span>
+              <span>Generated by agent-logs engine</span>
             </div>
           </div>
         </div>

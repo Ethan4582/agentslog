@@ -4,7 +4,7 @@ import { Terminal, Shield, FileText, Cpu } from "lucide-react";
 
 export default function DocsPage() {
   const codeSnippet = `import Anthropic from '@anthropic-ai/sdk';
-import { wrap } from 'agentlog';
+import { wrap } from 'agent-logs';
 
 const client = wrap(new Anthropic());
 
@@ -29,7 +29,7 @@ const response = await client.messages.create({
           <span className="text-[12px] font-semibold uppercase tracking-wider text-[#f5a623]">
             Documentation
           </span>
-          <h1 className="type-h1 mt-3 text-white">Getting Started with agentlog</h1>
+          <h1 className="type-h1 mt-3 text-white">Getting Started with agent-logs</h1>
           <p className="type-body mt-3 text-[#a0a0a0]">
             Zero-config AI session logger. Wrap once, record silently, and export anywhere.
           </p>
@@ -42,11 +42,11 @@ const response = await client.messages.create({
               <h2>1. Installation</h2>
             </div>
             <p className="text-[15px] text-[#a0a0a0]">
-              Install agentlog into your existing TypeScript or Node.js project:
+              Install agent-logs into your existing TypeScript or Node.js project:
             </p>
             <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] text-emerald-400">
-              bun add agentlog
-              <span className="text-[#666666] block mt-1"># or: npm install agentlog / pnpm add agentlog</span>
+              npm install agent-logs
+              <span className="text-[#666666] block mt-1"># or: bun add agent-logs / pnpm add agent-logs</span>
             </div>
           </section>
 
@@ -72,19 +72,19 @@ const response = await client.messages.create({
             </div>
             <div className="space-y-3">
               <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] space-y-1">
-                <div className="text-emerald-400">npx agentlog init</div>
+                <div className="text-emerald-400">npx agent-logs init</div>
                 <div className="text-[12px] text-[#888888]">Runs interactive setup with @clack/prompts and writes agentlog.config.ts.</div>
               </div>
               <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] space-y-1">
-                <div className="text-emerald-400">npx agentlog sessions</div>
+                <div className="text-emerald-400">npx agent-logs sessions</div>
                 <div className="text-[12px] text-[#888888]">Lists captured sessions in a formatted table with token totals and calculated USD costs.</div>
               </div>
               <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] space-y-1">
-                <div className="text-emerald-400">npx agentlog export</div>
+                <div className="text-emerald-400">npx agent-logs export</div>
                 <div className="text-[12px] text-[#888888]">Interactively select a session and generate a self-contained HTML trace report.</div>
               </div>
               <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] space-y-1">
-                <div className="text-emerald-400">npx agentlog share</div>
+                <div className="text-emerald-400">npx agent-logs share</div>
                 <div className="text-[12px] text-[#888888]">Publishes the exported report to a GitHub Gist and returns a public shareable link.</div>
               </div>
             </div>

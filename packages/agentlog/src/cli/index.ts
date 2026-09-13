@@ -42,10 +42,10 @@ function parseArgs(args: string[]): {
 }
 
 async function handleInit(): Promise<void> {
-  p.intro(pc.yellow("agentlog — setup"));
+  p.intro(pc.yellow("agent-logs — setup"));
 
   const captureMode = await p.select({
-    message: "Step 1 of 3 — How should agentlog capture your sessions?",
+    message: "Step 1 of 3 — How should agent-logs capture your sessions?",
     options: [
       {
         value: "ambient",
@@ -135,7 +135,7 @@ async function handleInit(): Promise<void> {
 
   p.outro(
     pc.dim(
-      "You're set. Run your agent normally — agentlog captures everything silently.\nExport when ready: npx agentlog export"
+      "You're set. Run your agent normally — agent-logs captures everything silently.\nExport when ready: npx agent-logs export"
     )
   );
 }
@@ -160,7 +160,7 @@ async function handleSessions(subcommand?: string): Promise<void> {
   if (sessions.length === 0) {
     console.log(pc.red("✗ No sessions found."));
     console.log(pc.dim("  Run your agent first, then come back to export."));
-    console.log(pc.dim("  Docs: https://agentlog.dev/docs/getting-started\n"));
+    console.log(pc.dim("  Docs: https://github.com/agentlogs/agentlogs\n"));
     return;
   }
 
@@ -217,7 +217,7 @@ async function handleExport(flags: Record<string, string | boolean>): Promise<vo
   if (sessions.length === 0) {
     console.log(pc.red("✗ No sessions found."));
     console.log(pc.dim("  Run your agent first, then come back to export."));
-    console.log(pc.dim("  Docs: https://agentlog.dev/docs/getting-started\n"));
+    console.log(pc.dim("  Docs: https://github.com/agentlogs/agentlogs\n"));
     return;
   }
 
@@ -292,7 +292,7 @@ async function handleShare(flags: Record<string, string | boolean>): Promise<voi
   if (!token) {
     console.log(pc.red("✗ GITHUB_TOKEN not set."));
     console.log(pc.dim("  Add it to your .env file or run: export GITHUB_TOKEN=ghp_..."));
-    console.log(pc.dim("  Docs: https://agentlog.dev/docs/sharing\n"));
+    console.log(pc.dim("  Docs: https://github.com/agentlogs/agentlogs\n"));
     return;
   }
 
@@ -318,13 +318,13 @@ async function handleShare(flags: Record<string, string | boolean>): Promise<voi
       headers: {
         Authorization: `token ${token}`,
         "Content-Type": "application/json",
-        "User-Agent": "agentlog-cli"
+        "User-Agent": "agent-logs-cli"
       },
       body: JSON.stringify({
-        description: `agentlog session ${session.id}`,
+        description: `agent-logs session ${session.id}`,
         public: true,
         files: {
-          [`agentlog-${session.id}.html`]: {
+          [`agent-logs-${session.id}.html`]: {
             content: result.html
           }
         }
@@ -347,12 +347,12 @@ async function handleShare(flags: Record<string, string | boolean>): Promise<voi
 
 function showHelp(): void {
   console.log(`Commands:
-  ${pc.yellow("npx agentlog")}                   ${pc.dim("Show help and ASCII branding")}
-  ${pc.yellow("npx agentlog init")}              ${pc.dim("First-run interactive setup")}
-  ${pc.yellow("npx agentlog export")}            ${pc.dim("Export session to self-contained HTML")}
-  ${pc.yellow("npx agentlog sessions")}          ${pc.dim("List captured sessions")}
-  ${pc.yellow("npx agentlog sessions clear")}    ${pc.dim("Delete all local session traces")}
-  ${pc.yellow("npx agentlog share")}             ${pc.dim("Export and upload to GitHub Gist")}
+  ${pc.yellow("npx agent-logs")}                   ${pc.dim("Show help and branding")}
+  ${pc.yellow("npx agent-logs init")}              ${pc.dim("First-run interactive setup")}
+  ${pc.yellow("npx agent-logs export")}            ${pc.dim("Export session to self-contained HTML")}
+  ${pc.yellow("npx agent-logs sessions")}          ${pc.dim("List captured sessions")}
+  ${pc.yellow("npx agent-logs sessions clear")}    ${pc.dim("Delete all local session traces")}
+  ${pc.yellow("npx agent-logs share")}             ${pc.dim("Export and upload to GitHub Gist")}
 
 Options:
   --session <id>    Specify session ID for export

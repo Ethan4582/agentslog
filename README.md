@@ -1,172 +1,64 @@
-# agentlog
+# Agent-logs
 
-A zero-overhead, local-first capture and export tool for AI agent sessions. Wrap your client in one line, record calls silently to disk, and export self-contained HTML traces for code reviews, interviews, and audits.
+![agent-logs](assets/hero.png)
 
-<!-- Replace with landing page screenshot or demo video -->
-![agentlog Landing Page Preview](assets/hero.png)
+A local-first session recorder and trace exporter for AI agents. Wrap your SDK client in one line, record calls silently to disk as NDJSON, and export self-contained HTML traces for code reviews, interviews, and audits.
 
----
+## Features
 
-## What it is
+- **Single-line wrap:** Supports Anthropic, OpenAI, DeepSeek, and Vercel AI SDK without modifying application logic.
+- **Append-only streaming:** Writes calls directly to local NDJSON so traces survive process crashes.
+- **In-memory redaction:** Strips API keys, Bearer tokens, and emails before records reach disk.
+- **Cost tracking:** Computes token usage and estimated dollar costs across Claude, GPT, DeepSeek, and Gemini models.
+- **Multi-format export:** Produces self-contained HTML reports for interviews, debugging, compliance audits, and portfolios.
+- **Zero telemetry:** Completely offline with zero remote telemetry or external servers.
 
-agentlog records multi-turn LLM interactions directly on your local machine. It intercepts SDK network calls, redacts secrets in memory, and writes append-only newline-delimited JSON logs to `.agentlog/sessions/`.
+## Quick Start
 
-When you want to share your agent's reasoning, run the CLI export command. agentlog formats the session into a single, standalone HTML file with embedded styling and interaction logic. No external server, no account setup, and no telemetry.
-
----
-
-## Key features
-
-- **Single-line client wrap:** Works with Anthropic, OpenAI, DeepSeek, Grok, and Vercel AI SDK without changing your application logic.
-- **Append-only streaming:** Each call writes to disk immediately. If your agent process crashes, prior calls remain intact.
-- **In-memory redaction:** Strips API keys, Bearer tokens, and email addresses before records reach persistent storage.
-- **Token cost tracking:** Computes token usage and estimated dollar costs across Claude, GPT, DeepSeek, and Gemini models.
-- **Targeted export types:** Produces four distinct output formats: `interview` (narrative reasoning), `debug` (dense telemetry), `audit` (model and cost ledger), and `portfolio` (outcome-focused).
-- **Self-contained HTML:** Exports require no runtime dependencies, external CDNs, or remote assets. Open them directly in any browser.
-
----
-
-## Architecture
-
-```mermaid
-flowchart LR
-    App[Agent Code] -->|wrap| Client[SDK Client Proxy]
-    Client -->|API Call| LLM[LLM Provider]
-    LLM -->|Response| Client
-    Client -->|Raw Record| Redact[Redaction Engine]
-    Redact -->|Sanitized Record| Disk[Local NDJSON Writer]
-    Disk -->|Read Session| CLI[CLI Export Engine]
-    CLI -->|Format| HTML[Standalone HTML Report]
-```
-
-For complete architecture details, schemas, and trade-off analyses, read [decision.md](decision.md).
-
----
-
-## Monorepo layout
-
-This repository is managed with Bun workspaces:
-
-```
-agentlog/
-├── packages/
-│   └── agentlog/         # Core TypeScript library and CLI tool
-├── apps/
-│   └── web/              # Static Next.js landing page and documentation
-├── assets/               # Visual brand assets and provider logos
-├── decision.md           # Architecture design document and decision log
-└── README.md
-```
-
----
-
-## Installation
-
-To add the package to your project, run:
+### 1. Install
 
 ```bash
-bun add agentlog
+npm install agent-logs
 # or
-npm install agentlog
+bun add agent-logs
 ```
 
-Provider SDKs (`@anthropic-ai/sdk`, `openai`) are optional peer dependencies. Install only the SDKs your application uses.
-
----
-
-## Usage
-
-### 1. Wrap your client
-
-Wrap your existing client instance. Types and method signatures stay identical:
+### 2. Wrap your client
 
 ```ts
 import Anthropic from "@anthropic-ai/sdk";
-import { wrap } from "agentlog";
+import { wrap } from "agent-logs";
 
 const client = wrap(new Anthropic());
 
-// Run calls as normal
+// Use client normally — calls are logged silently to .agentlog/sessions/
 const response = await client.messages.create({
   model: "claude-3-5-sonnet-20241022",
   max_tokens: 1024,
-  messages: [{ role: "user", content: "Write an idempotent database migration." }],
+  messages: [{ role: "user", content: "Implement an idempotent token verification middleware." }],
 });
 ```
 
-For OpenAI or compatible endpoints (such as DeepSeek):
-
-```ts
-import OpenAI from "openai";
-import { wrap } from "agentlog";
-
-const client = wrap(
-  new OpenAI({
-    baseURL: "https://api.deepseek.com",
-    apiKey: process.env.DEEPSEEK_API_KEY,
-  })
-);
-```
-
-### 2. Inspect captured sessions
-
-To view all recorded sessions in your terminal, run:
+### 3. CLI Commands
 
 ```bash
-npx agentlog sessions
+# View captured sessions and token costs
+npx agent-logs sessions
+
+# Export session into a standalone HTML report
+npx agent-logs export
+
+# First-time interactive configuration
+npx agent-logs init
 ```
 
-This outputs a table showing session IDs, start times, model versions, turn counts, total tokens, and estimated costs.
+## Architecture Flow
 
-### 3. Export a report
+![alt text](image.png)
 
-To generate an HTML trace report, run:
+## Documentation
 
-```bash
-npx agentlog export
-```
-
-The CLI displays an interactive prompt to select the session and export type. It compiles the output into `./agentlog-exports/<session-id>-<type>.html`.
-
-To run non-interactively in automated scripts, supply the flags directly:
-
-```bash
-npx agentlog export --session <session-id> --type interview --output ./report.html
-```
-
----
-
-## How it works
-
-1. **Proxy interception:** `wrap(client)` returns a wrapped client instance. When your application calls completion methods, the wrapper records timestamps, model parameters, and input messages.
-2. **In-memory scrubbing:** The payload passes through regex cleaners that replace detected credentials, authorization headers, and emails with redaction placeholders.
-3. **Sequential write:** The sanitized record is appended to `.agentlog/sessions/<session-id>.ndjson` using synchronous file appends.
-4. **Offline generation:** When you run `agentlog export`, the CLI reads the session file, optionally requests a narrative synthesis from your configured model, and injects the result into an inlined HTML template.
-
----
-
-## Development and testing
-
-To run tests across all packages:
-
-```bash
-bun test
-```
-
-To build both the NPM package and the documentation web application:
-
-```bash
-bun run build
-```
-
-To start the documentation web application locally:
-
-```bash
-cd apps/web
-bun run dev
-```
-
----
+- [decision.md](decision.md) — Architecture decisions, design trade-offs, and internal mechanics.
 
 ## License
 

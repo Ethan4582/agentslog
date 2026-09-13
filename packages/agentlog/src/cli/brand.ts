@@ -1,10 +1,10 @@
 export const ASCII_LOGO = [
-  " █████╗  ██████╗ ███████╗███╗   ██╗████████╗██╗      ██████╗  ██████╗",
-  "██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██║     ██╔═══██╗██╔════╝",
-  "███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ██║     ██║   ██║██║  ███╗",
-  "██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ██║     ██║   ██║██║   ██║",
-  "██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ███████╗╚██████╔╝╚██████╔╝",
-  "╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝"
+  " ██████╗  ██████╗ ███████╗███╗   ███╗████████╗██╗      ██████╗  ██████╗ ",
+  "██╔═══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██║     ██╔═══██╗██╔════╝ ",
+  "██║   ██║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ██║     ██║   ██║██║  ███╗",
+  "██║   ██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ██║     ██║   ██║██║   ██║",
+  "╚██████╔╝╚██████╔╝███████╗██║ ╚████║   ██║   ███████╗╚██████╔╝╚██████╔╝",
+  " ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ "
 ];
 
 const AMBER = "\x1b[38;2;245;166;35m";
@@ -17,7 +17,7 @@ export async function renderBrandHeader(animate = false): Promise<void> {
     for (const line of ASCII_LOGO) {
       console.log(`${AMBER}${line}${RESET}`);
     }
-    console.log(`  ${DIM}agentlog v0.1.0 — zero-config AI session logger${RESET}\n`);
+    console.log(`  ${DIM}agent-logs v0.1.0 — zero-config AI session logger${RESET}\n`);
     return;
   }
 
@@ -26,5 +26,5 @@ export async function renderBrandHeader(animate = false): Promise<void> {
     process.stdout.write(`${AMBER}${line}${RESET}\n`);
     await new Promise((r) => setTimeout(r, 45));
   }
-  console.log(`  ${DIM}agentlog v0.1.0 — zero-config AI session logger${RESET}\n`);
+  console.log(`  ${DIM}agent-logs v0.1.0 — zero-config AI session logger${RESET}\n`);
 }
