@@ -13,11 +13,11 @@ interface CommandData {
 
 const COMMANDS: Record<CliCommandKey, CommandData> = {
   init: {
-    cmd: "npx agentlog init",
+    cmd: "npx agent-logs init",
     description: "Interactive setup wizard powered by @clack/prompts",
-    output: `┌  agentlog — setup
+    output: `┌  agent-logs — setup
 │
-◇  Step 1 of 3 — How should agentlog capture your sessions?
+◇  Step 1 of 3 — How should agent-logs capture your sessions?
 │  ● Use your existing agent environment (ambient)
 │
 ◇  Step 2 of 3 — Which log type do you want to generate?
@@ -30,10 +30,10 @@ const COMMANDS: Record<CliCommandKey, CommandData> = {
 ✔ Added .agentlog/ to .gitignore
 ✔ Config written: agentlog.config.ts
 │
-└  You're set. Run your agent normally — agentlog captures everything silently.`
+└  You're set. Run your agent normally — agent-logs captures everything silently.`
   },
   sessions: {
-    cmd: "npx agentlog sessions",
+    cmd: "npx agent-logs sessions",
     description: "View all captured local traces with call counts and estimated costs",
     output: `Captured Sessions:
 
@@ -44,7 +44,7 @@ cb55bb5a-3e5  2026-09-13 10:48:02     claude-3-5-sonnet   1       57        $0.0
 e992bc44-55f  2026-09-13 14:02:11     deepseek-chat       5       3,890     $0.0028`
   },
   export: {
-    cmd: "npx agentlog export",
+    cmd: "npx agent-logs export",
     description: "Render session traces into standalone single-file HTML reports",
     output: `? Pick a session to export:
   ● cb55bb5a-3e5 (claude-3-5-sonnet) — 1 calls · 2026-09-13
@@ -60,7 +60,7 @@ e992bc44-55f  2026-09-13 14:02:11     deepseek-chat       5       3,890     $0.0
   Saved to: ./agentlog-exports/cb55bb5a-3e5-interview-2026-09-13.html`
   },
   share: {
-    cmd: "npx agentlog share",
+    cmd: "npx agent-logs share",
     description: "Upload exported HTML directly to GitHub Gist with a public shareable URL",
     output: `Exporting session and uploading to GitHub Gist...
 
@@ -82,21 +82,19 @@ export function CliShowcaseSection() {
   };
 
   return (
-    <section className="mx-auto max-w-5xl px-6 py-28 border-t border-[#222222] text-left">
-      <div className="mb-12">
-        <span className="text-[13px] font-semibold uppercase tracking-wider text-[#f5a623]">
-          Command Line Interface
+    <section id="cli-preview" className="mx-auto max-w-7xl px-6 py-24 text-center border-t border-[#1f1f1f]">
+      <div className="mx-auto max-w-3xl space-y-4">
+        <span className="text-[12px] font-semibold uppercase tracking-wider text-[#f5a623]">
+          Terminal First
         </span>
-        <h2 className="type-h2 mt-3 text-white">
-          Terminal-first engineering.
-        </h2>
-        <p className="type-body mt-4 max-w-2xl text-[#a0a0a0]">
-          Clean one-liners, no stack traces, and full control over your session exports from the command line.
+        <h2 className="type-h2 text-white">An interactive CLI built for speed</h2>
+        <p className="type-body text-[#9ca3af]">
+          Zero configuration files required. Run commands interactively with arrow keys or script them headlessly in CI/CD pipelines.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-[#262626] bg-[#161616] shadow-2xl overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between border-b border-[#242424] bg-[#1a1a1a] px-4 py-2 gap-3">
+      <div className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-xl border border-[#262626] bg-[#141414] shadow-2xl text-left">
+        <div className="flex flex-wrap items-center justify-between border-b border-[#222222] bg-[#1a1a1a] px-4 py-3 gap-2">
           <div className="flex items-center gap-2">
             {(["sessions", "init", "export", "share"] as const).map((key) => (
               <button
@@ -109,7 +107,7 @@ export function CliShowcaseSection() {
                     : "text-[#888888] hover:text-white hover:bg-[#202020]"
                 }`}
               >
-                agentlog {key}
+                agent-logs {key}
               </button>
             ))}
           </div>
@@ -124,14 +122,14 @@ export function CliShowcaseSection() {
           </button>
         </div>
 
-        <div className="p-6 bg-[#121212] font-mono text-[13px] leading-relaxed overflow-x-auto text-[#d4d4d4]">
-          <div className="flex items-center gap-2 text-[#888888] mb-3 pb-3 border-b border-[#202020]">
+        <div className="p-6 font-mono text-[13px] leading-relaxed">
+          <div className="flex items-center gap-2 text-[#888888] mb-4 pb-3 border-b border-[#222222]/60">
             <Terminal className="h-4 w-4 text-[#f5a623]" />
-            <span className="text-white font-semibold">$ {active.cmd}</span>
-            <span className="text-[12px] text-[#666666] ml-2 hidden sm:inline">&bull; {active.description}</span>
+            <span className="text-white font-semibold">{active.cmd}</span>
+            <span className="text-[12px] ml-auto hidden sm:inline text-[#666666]">{active.description}</span>
           </div>
 
-          <pre className="text-[#a3a3a3] whitespace-pre font-mono text-[12px] sm:text-[13px]">
+          <pre className="text-zinc-300 overflow-x-auto whitespace-pre">
             <code>{active.output}</code>
           </pre>
         </div>

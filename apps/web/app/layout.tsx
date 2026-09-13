@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "agentlog — Zero-config AI session logger",
+  title: "agent-logs — Zero-config AI session logger",
   description:
     "Wrap once, record silently, and export clean, self-contained HTML traces for interviews, debugging, audits, and portfolios.",
   icons: {
-    icon: "/applogo.png"
+    icon: "/applog.png"
   }
 };
 

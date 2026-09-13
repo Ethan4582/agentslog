@@ -9,9 +9,9 @@ interface FaqItem {
 
 const FAQ_ITEMS: readonly FaqItem[] = [
   {
-    question: "What exactly is agentlog?",
+    question: "What exactly is agent-logs?",
     answer:
-      "agentlog is a lightweight, zero-config TypeScript/JavaScript developer tool for capturing and exporting AI agent sessions. It wraps your existing SDK clients in one line, records prompt iterations and tool invocations locally to newline-delimited JSON (.ndjson), and exports them into standalone, beautiful HTML reports."
+      "agent-logs is a lightweight, zero-config TypeScript/JavaScript developer tool for capturing and exporting AI agent sessions. It wraps your existing SDK clients in one line, records prompt iterations and tool invocations locally to newline-delimited JSON (.ndjson), and exports them into standalone, beautiful HTML reports."
   },
   {
     question: "How does the one-line wrap() function work?",
@@ -21,27 +21,27 @@ const FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: "Where are my session traces stored?",
     answer:
-      "All session traces are saved strictly on your local filesystem under .agentlog/sessions/<session-id>.ndjson in the project root. agentlog does not run any background daemon, does not require an account, and sends zero telemetry to remote servers."
+      "All session traces are saved strictly on your local filesystem under .agentlog/sessions/<session-id>.ndjson in the project root. agent-logs does not run any background daemon, does not require an account, and sends zero telemetry to remote servers."
   },
   {
     question: "How does secret redaction work?",
     answer:
-      "Before any text is written to disk or exported, agentlog runs an automated redaction engine that identifies and sanitizes OpenAI keys, Anthropic keys, GitHub tokens, Bearer tokens, email addresses, and credit cards. You can also specify custom regex patterns in your agentlog.config.ts."
+      "Before any text is written to disk or exported, agent-logs runs an automated redaction engine that identifies and sanitizes OpenAI keys, Anthropic keys, GitHub tokens, Bearer tokens, email addresses, and credit cards. You can also specify custom regex patterns in your agentlog.config.ts."
   },
   {
     question: "What are the four log types supported?",
     answer:
-      "agentlog supports: (1) Interview Log — a story-driven narrative highlighting problem framing, decisions, and tool usage; (2) Debug Log — dense telemetry with millisecond timing and raw request/response payloads; (3) Audit Log — a formal compliance ledger with exact model versions and itemized token costs; and (4) Portfolio Log — an outcome-focused summary for engineering showcases."
+      "agent-logs supports: (1) Interview Log — a story-driven narrative highlighting problem framing, decisions, and tool usage; (2) Debug Log — dense telemetry with millisecond timing and raw request/response payloads; (3) Audit Log — a formal compliance ledger with exact model versions and itemized token costs; and (4) Portfolio Log — an outcome-focused summary for engineering showcases."
   },
   {
-    question: "Can I use agentlog with local models like Ollama or vLLM?",
+    question: "Can I use agent-logs with local models like Ollama or vLLM?",
     answer:
       "Yes. The OpenAI adapter automatically detects any custom baseURL (such as http://localhost:11434/v1 for Ollama or http://localhost:8000/v1 for vLLM) and logs all local inference turns seamlessly."
   },
   {
-    question: "What license is agentlog released under?",
+    question: "What license is agent-logs released under?",
     answer:
-      "agentlog is released under the Functional Source License (FSL-1.1-Apache-2.0). You are free to inspect, modify, and self-host for internal use. Two years after each release, the code automatically converts to the Apache 2.0 license."
+      "agent-logs is released under the MIT License. You are free to inspect, modify, and self-host for personal or commercial use."
   }
 ];
 

@@ -1,5 +1,5 @@
 {
-  "name": "agentlog",
+  "name": "agent-logs",
   "version": "0.1.0",
   "description": "Zero-config AI session logger. Wrap once, export anywhere.",
   "type": "module",
@@ -13,6 +13,7 @@
     }
   },
   "bin": {
+    "agent-logs": "./dist/cli/index.js",
     "agentlog": "./dist/cli/index.js"
   },
   "files": [

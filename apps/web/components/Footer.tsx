@@ -29,12 +29,12 @@ export function Footer() {
         <div className="mt-8 flex justify-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#262626] bg-[#181818] px-4 py-1.5 font-mono text-[12px] text-[#a0a0a0]">
             <Terminal className="h-3.5 w-3.5 text-[#f5a623]" />
-            <span>bun add agentlog</span>
+            <span>npm install agent-logs</span>
           </div>
         </div>
 
         <p className="mt-8 text-[13px] text-[#666666]">
-          Released under Functional Source License (FSL-1.1-Apache-2.0) &bull; &copy; 2026 agentlog
+          Released under MIT License &bull; &copy; 2026 agent-logs
         </p>
       </div>
     </footer>

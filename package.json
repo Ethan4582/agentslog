@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build:pkg": "bun --filter agentlog build",
+    "build:pkg": "bun --filter agent-logs build",
     "build:web": "bun --filter agentlog-web build",
     "build": "bun run build:pkg && bun run build:web",
     "test": "bun test"
