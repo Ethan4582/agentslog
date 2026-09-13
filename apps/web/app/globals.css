@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-dark-red: #550000;
+  --color-dark-red-1: #660000;
+  --color-dark-red-2: #770000;
+
+  --font-instrument-serif: 'Instrument Serif', Georgia, serif;
+  --font-geist-sans: 'Geist', 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --text-14: 14px;
+  --text-16: 16px;
+  --text-18: 18px;
+  --text-20: 20px;
+  --text-36: 36px;
+  --text-72: 72px;
+
+  --leading-h1: 1.00;
+  --tracking-h1: -1.8px;
+  --leading-h2: 1.11;
+  --tracking-h2: -0.9px;
+  --leading-h3: 1.40;
+  --leading-body: 1.56;
+  --leading-link: 1.50;
+  --leading-body-16: 1.50;
+  --leading-link-14: 1.43;
+  --leading-small-body: 1.43;
+
+  --shadow-high: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklch(0.186 0 0) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px;
+  --shadow-high-2: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.25) 0px 25px 50px -12px;
+}
+
+@layer components {
+  .type-h1 {
+    font-family: var(--font-instrument-serif);
+    font-size: var(--text-72);
+    font-weight: 400;
+    line-height: var(--leading-h1);
+    letter-spacing: var(--tracking-h1);
+  }
+
+  .type-h2 {
+    font-family: var(--font-instrument-serif);
+    font-size: var(--text-36);
+    font-weight: 400;
+    line-height: var(--leading-h2);
+    letter-spacing: var(--tracking-h2);
+  }
+
+  .type-h3 {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-20);
+    font-weight: 600;
+    line-height: var(--leading-h3);
+  }
+
+  .type-body {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-18);
+    font-weight: 400;
+    line-height: var(--leading-body);
+  }
+
+  .type-link {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-16);
+    font-weight: 500;
+    line-height: var(--leading-link);
+  }
+
+  .type-body-16 {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-16);
+    font-weight: 400;
+    line-height: var(--leading-body-16);
+  }
+
+  .type-link-14 {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-14);
+    font-weight: 500;
+    line-height: var(--leading-link-14);
+  }
+
+  .type-small-body {
+    font-family: var(--font-geist-sans);
+    font-size: var(--text-14);
+    font-weight: 400;
+    line-height: var(--leading-small-body);
+  }
+}
+
+html, body {
+  background-color: #121212 !important;
+  color: #ededed;
+  font-family: var(--font-geist-sans);
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: #f5a623;
+  color: #000;
+}
