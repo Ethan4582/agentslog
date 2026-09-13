@@ -1,290 +1,131 @@
-# agentlog — Architecture and System Design Decisions
+# Architecture Decisions and Internals Reference
 
-> A zero-overhead, local-first capture and export system for AI agent sessions that produces standalone, shareable inspection reports without external infrastructure.
-
----
-
-## 1. Problem Statement
-
-Developers building with LLMs and AI agents lack a standard, lightweight method to inspect, audit, and share multi-turn execution traces. Existing LLM observability tools require hosted cloud accounts, remote telemetry endpoints, API keys sent to third-party services, and heavy SDK dependencies that inject latency into agent run loops. When engineers want to demonstrate agent reasoning to teammates, interviewers, or clients, they are forced to take screenshot crops of terminal stdout or manually copy-paste raw JSON payloads. Without a local-first recording layer, developers risk exposing API keys in terminal logs, losing session state on process crashes, and spending significant time preparing artifacts for review.
+This document covers the core architecture, key design decisions, and internal mechanics of agentlog. Use it as a quick reference when contributing to or debugging the codebase.
 
 ---
 
-## 2. Goals and Non-Goals
+## System Overview
 
-### Goals
-- Capture complete prompt inputs, completions, tool calls, and token usage with less than 5 milliseconds of invocation overhead.
-- Store session traces locally in human-readable, append-only files without requiring external databases or server processes.
-- Redact secrets, authorization headers, email addresses, and API credentials before writing data to disk.
-- Compile execution sessions into portable, standalone HTML files containing embedded CSS and JavaScript for offline viewing.
-- Support multiple export lenses (`interview`, `debug`, `audit`, `portfolio`) tailored to distinct technical and non-technical audiences.
-- Maintain a zero-configuration developer experience with single-line client wrapping for major LLM SDKs (Anthropic, OpenAI, DeepSeek, Vercel AI SDK).
+agentlog is an offline-first session recorder and exporter for AI agents. It captures prompts, tool calls, and token usage locally, redacts secrets in memory, and formats traces into standalone HTML reports without requiring external servers.
 
-### Non-Goals
-- Real-time distributed tracing dashboards or cross-machine cluster metrics.
-- Centralized multi-tenant SaaS backend with user accounts and team workspaces.
-- In-flight prompt rewriting or proxy-level rate limiting.
-- Headless browser automation recording or audio/video session captures.
-- Proprietary binary file formats for session persistence.
+### Internal Data Flow
 
----
-
-## 3. Functional Requirements
-
-- **Client interception:** The library wraps SDK instances (Anthropic, OpenAI, DeepSeek, and Vercel AI SDK) and captures input messages, system instructions, tool definitions, output blocks, stop reasons, and token counts.
-- **Append-only streaming:** Each LLM interaction writes to an NDJSON session log immediately upon completion.
-- **Automated credential redaction:** The capture pipeline sanitizes API keys (`sk-...`, Anthropic keys, GitHub tokens, Bearer headers, and emails) across strings, nested objects, and arrays.
-- **Cost calculation:** The system computes per-call and cumulative dollar costs across common model families using exact and prefix-matched pricing tables.
-- **Multi-format export engine:** The CLI transforms session logs into formatted HTML documents using audience-targeted system prompts and inline templates.
-- **Interactive CLI:** A command-line interface (`agentlog`) provides commands to inspect sessions (`sessions`), initialize project configuration (`init`), clear traces (`sessions clear`), export HTML reports (`export`), and upload exports to GitHub Gists (`share`).
-
----
-
-## 4. Non-Functional Requirements
-
-- **Overhead:** Added latency on the LLM request/response cycle must remain under 5 ms.
-- **Crash durability:** If an agent process crashes or terminates abnormally, all calls completed prior to the crash must remain intact on disk in `.agentlog/sessions/<session-id>.ndjson`.
-- **Security and privacy:** No raw credentials or authorization headers may be written to disk. The capture pipeline executes redaction synchronously in memory before file writes.
-- **Zero remote telemetry:** The capture engine never transmits trace data to external servers. External network calls only occur if the user explicitly triggers LLM export synthesis or GitHub Gist sharing.
-- **Self-contained output:** Exported HTML files require no external CDN stylesheets, scripts, or font dependencies to render correctly offline.
-- **Bundle minimalism:** The core package ships with zero heavyweight runtime dependencies, using optional peer dependencies for provider SDKs.
-
----
-
-## 5. Scale and Capacity Estimation
-
-The system operates locally within developer environments and CI pipelines.
-
-| Metric | Working Value |
-|---|---|
-| Average call input payload | 4 KB – 32 KB (system prompt + message history) |
-| Average call output payload | 1 KB – 8 KB |
-| Single call record size on disk | ~5 KB to 25 KB (compressed text / JSON) |
-| Typical multi-turn agent session | 10 – 50 tool invocations and completions |
-| Disk space per session | 50 KB – 1.2 MB |
-| File write throughput | 1 append operation per LLM call (< 1 ms disk I/O) |
-| Storage footprint for 500 sessions | ~150 MB (readily contained within local dev disk) |
-
-**Storage calculation:**
-- A session running 25 turns at an average of 12 KB per record consumes ~300 KB of disk space in `.agentlog/sessions/`.
-- File writes append a single line per call. Disk operations remain sequential, avoiding read-modify-write locks or database contention.
-
----
-
-## 6. High-Level Design (HLD)
-
-The system consists of three distinct layers:
-1. **Runtime Capture Layer (`packages/agentlog/src/capture` & `adapters`):** Intercepts SDK network completions, sanitizes credentials in memory, and writes NDJSON records to local storage.
-2. **Analysis and Export Layer (`packages/agentlog/src/export`, `prompts`, `templates`, `cli`):** Reads session logs, runs audience-specific synthesis via the developer's configured LLM, and formats single-file HTML reports.
-3. **Documentation and Web Showcase (`apps/web`):** Next.js 15 static export landing page documenting package usage and architecture.
-
-```
-Agent Application
-       │
-       ▼
-[Agentlog Wrapper Proxy]
-       │
-       ├──► Upstream LLM Provider (Anthropic / OpenAI / DeepSeek / Vercel AI)
-       │
-       ▼
-[Memory Redaction Engine] (Sanitizes keys, tokens, emails)
-       │
-       ▼
-[NDJSON Session Writer]  ──► Writes `.agentlog/sessions/<id>.ndjson`
-       │
-       ▼
-[CLI Export Engine]      ──► LLM Synthesis ──► [Inlined HTML Template] ──► `agentlog-exports/*.html`
+```mermaid
+flowchart LR
+    App[Agent App] -->|Calls SDK| Proxy[Proxy Wrapper]
+    Proxy -->|Pass-through| Provider[LLM Provider API]
+    Provider -->|Response| Proxy
+    Proxy -->|Raw Turn| Redact[Memory Redaction]
+    Redact -->|Clean Record| Writer[NDJSON Writer]
+    Writer -->|Append Line| Disk[(".agentlog/sessions/*.ndjson")]
+    Disk -->|Read Session| Export[Export Engine]
+    Export -->|Optional Synthesis| LLM[Local LLM Call]
+    LLM --> Export
+    Export -->|Compile| HTML[Standalone HTML File]
 ```
 
 ---
 
-## 7. Low-Level Design (LLD)
+## How the Internals Work
 
-### 7.1 Adapters Layer (`src/adapters/`)
-The adapters layer uses the JavaScript Proxy pattern and method interception rather than monkey-patching global runtime environments.
+### 1. Client Interception (`packages/agentlog/src/adapters/`)
+- `wrap(client)` inspects the incoming client object to detect Anthropic (`client.messages.create`) or OpenAI-compatible shapes (`client.chat.completions.create`).
+- It wraps the target completion method using a lightweight Proxy.
+- Before delegating to the native SDK, the wrapper starts a high-resolution timer.
+- On return (or throw), it extracts input messages, tool parameters, stop reasons, and token counts, normalizes them into a unified `Call` shape, and hands them to the session writer.
 
-- **Anthropic Adapter (`anthropic.ts`):** Wraps `client.messages.create`. Computes call duration, normalizes input content blocks, extracts tool use arguments, maps output blocks, records stop reasons, and passes data to the session writer.
-- **OpenAI Adapter (`openai.ts`):** Wraps `client.chat.completions.create`. Supports standard OpenAI models and custom base URLs (including DeepSeek and Grok). Normalizes chat message roles, function call arguments, and finish reasons into unified `Call` schema.
-- **Vercel AI SDK Adapter (`vercel-ai.ts`):** Wraps high-level helper functions `generateText` and `streamText`.
-- **Automatic Client Detection (`index.ts`):** The `wrap(client)` entry point inspects client signatures (`client.messages` vs `client.chat.completions`) and attaches the appropriate adapter automatically.
+### 2. Redaction Engine (`packages/agentlog/src/capture/redact.ts`)
+- Runs synchronously in memory before any data is passed to the filesystem.
+- Traverses string primitives, objects, and arrays up to a safe depth limit.
+- Replaces matches for known secret patterns (OpenAI keys, Anthropic keys, GitHub tokens, Bearer headers, and emails) with static redaction tokens like `[REDACTED_API_KEY]`.
+- Guarantees that raw credentials never reach persistent storage on disk.
 
-### 7.2 Capture and Redaction Engine (`src/capture/`)
-- **Redaction (`redact.ts`):** Operates on primitive values, nested objects, and arrays. Evaluates regular expressions for OpenAI keys (`sk-[A-Za-z0-9_-]{20,}`), Anthropic keys (`sk-ant-[A-Za-z0-9_-]{20,}`), Bearer tokens, general API keys, and email addresses. Replaces matched patterns with `[REDACTED_API_KEY]`, `Bearer [REDACTED_TOKEN]`, and `[REDACTED_EMAIL]`.
-- **Writer (`writer.ts`):** Initializes a session by creating `.agentlog/sessions/<id>.ndjson` and writing a `SessionHeader` as the first line. Subsequent calls are appended as individual JSON lines. The writer also exposes utilities to list stored sessions, parse complete histories, and clear session logs.
+### 3. Session Persistence (`packages/agentlog/src/capture/writer.ts`)
+- Stores each session as an append-only newline-delimited JSON (`.ndjson`) file in `.agentlog/sessions/<session-id>.ndjson`.
+- Line 1 is a `SessionHeader` record with session ID, start timestamp, provider, and model name.
+- Subsequent lines are individual `SessionCallRecord` entries appended immediately as each LLM turn finishes.
+- If an agent process crashes or is terminated mid-run, all previously completed calls remain intact and readable.
 
-### 7.3 Token Pricing Engine (`src/costs.ts`)
-Tracks per-million token rates across major foundation models:
-- Claude 3.5 Sonnet / Opus / Haiku
-- GPT-4o / GPT-4o-mini
-- DeepSeek Chat / Reasoner
-- Gemini 1.5 Pro / Flash
+### 4. Cost Engine (`packages/agentlog/src/costs.ts`)
+- Maintains per-million token pricing tables for Claude, GPT, DeepSeek, and Gemini models.
+- Resolves model identifiers using exact matches first, followed by prefix matching.
+- If a model identifier is unknown or custom, it returns `null` instead of throwing, allowing execution to continue safely.
 
-The engine implements fuzzy model matching: exact matches are evaluated first, followed by substring and prefix matches. If a model name is not recognized, the calculator returns `null` instead of throwing an exception, preventing unlisted or fine-tuned model identifiers from halting execution.
-
-### 7.4 Export and Templating Engine (`src/export/`)
-- **Router (`router.ts`):** Maps requested log types (`interview`, `debug`, `audit`, `portfolio`) to their respective system prompt builders and HTML templates.
-- **Renderer (`renderer.ts`):** Reads the requested session NDJSON log, verifies call counts, and compiles the log-type prompt. If the user possesses an active LLM key, the renderer executes a single completion to summarize decisions, trade-offs, and reasoning. The resulting summary and raw call cards are injected directly into a standalone HTML template with zero external CSS or JavaScript dependencies.
-
-### 7.5 CLI Architecture (`src/cli/`)
-Built with `@clack/prompts` and `picocolors`:
-- **Branding (`brand.ts`):** Renders an ANSI header on boot.
-- **`init` command:** Guides developers through environment detection, log selection, and creates `.agentlog/` while verifying `.gitignore`.
-- **`export` command:** Interactively selects stored sessions, prompts for export type, triggers the renderer, and outputs a clean path to the generated HTML report.
-- **`sessions` command:** Renders a terminal table summarizing captured session IDs, creation timestamps, model names, call counts, token consumption, and estimated costs.
-- **`share` command:** Exports the session and creates a GitHub Gist via GitHub CLI or API token, returning a shareable public or secret URL.
+### 5. Export and Templating (`packages/agentlog/src/export/`)
+- The CLI (`agentlog export`) reads the target session's `.ndjson` file.
+- It routes to one of four output types: `interview` (narrative focus), `debug` (dense timeline and latency), `audit` (token and cost ledger), or `portfolio` (high-level showcase).
+- If the developer has an API key configured, it runs a single synthesis call to generate high-level summaries and takeaways. If no key is present, it falls back to raw structured timeline rendering.
+- Inlines all CSS, SVG icons, and JavaScript into a single HTML file. The output has zero CDN dependencies and opens offline in any browser.
 
 ---
 
-## 8. Data Models and Schemas
+## Key Decisions and Trade-offs
 
-### 8.1 Session Header Record (`SessionHeader`)
-Written as line 1 of every `.ndjson` session file:
+### Append-Only Local NDJSON vs. Embedded Database (SQLite)
+- **Decision:** Use flat `.ndjson` files in `.agentlog/sessions/`.
+- **Reasoning:** Zero binary dependencies (no `node-gyp` or native bindings to compile on different operating systems). Newline-delimited files stream cleanly with synchronous file appends.
+- **Trade-off:** Querying across hundreds of sessions requires reading directory files rather than running SQL queries. This is acceptable because sessions are inspected individually or in small batches.
+
+### Proxy Wrapping vs. Monkey-Patching `globalThis.fetch`
+- **Decision:** Require developers to call `wrap(client)`.
+- **Reasoning:** Global fetch patching introduces hidden side effects into unrelated network calls (database connections, internal APIs, webhooks). Explicit proxying preserves TypeScript types and makes recording predictable.
+- **Trade-off:** Requires a one-line code modification during client setup instead of ambient zero-code process hooking.
+
+### Client-Side Synthesis vs. Hosted Cloud Ingestion
+- **Decision:** Run trace summarization directly on the developer's machine using their existing API keys.
+- **Reasoning:** Eliminates backend hosting costs, authentication infrastructure, and user databases. Trace data and source code remain on the developer's machine, satisfying corporate confidentiality requirements.
+- **Trade-off:** Narrative report generation requires a valid API key in the developer's local environment.
+
+### Single-File HTML Reports vs. Web Dashboard
+- **Decision:** Compile exports into self-contained `.html` files.
+- **Reasoning:** Developers need artifacts they can attach to pull requests, drop into Slack channels, email to reviewers, or view offline. A standalone file requires no hosting or account setup.
+- **Trade-off:** Does not support real-time shared editing or live collaborative annotations.
+
+### Optional Peer Dependencies for Provider SDKs
+- **Decision:** Mark `@anthropic-ai/sdk` and `openai` as optional peer dependencies.
+- **Reasoning:** Keeps package install size small. A project using only Anthropic does not install OpenAI SDK packages or transitive dependencies.
+- **Trade-off:** Adapter implementations must rely on structural duck-typing (`client.messages` vs. `client.chat.completions`) rather than strict compile-time SDK imports.
+
+---
+
+## File Format Reference
+
+Each `.ndjson` file contains two record types:
+
+### Line 1: Header Record
 ```json
 {
   "type": "header",
-  "id": "c1f73b8a",
+  "id": "a1b2c3d4",
   "startedAt": "2026-09-13T10:15:30.120Z",
   "provider": "anthropic",
   "model": "claude-3-5-sonnet-20241022",
-  "title": "autonomous-repo-refactor",
+  "title": "refactor-auth-flow",
   "metadata": {}
 }
 ```
 
-### 8.2 Call Record (`SessionCallRecord`)
-Appended on every completed LLM turn:
+### Lines 2+: Call Record
 ```json
 {
   "type": "call",
   "call": {
-    "id": "call_01a",
+    "id": "call_01",
     "timestamp": "2026-09-13T10:15:32.400Z",
     "durationMs": 1420,
     "input": {
-      "system": "You are a senior systems engineer.",
-      "messages": [
-        {
-          "role": "user",
-          "content": "Analyze memory leaks in worker pool."
-        }
-      ],
-      "tools": [
-        {
-          "name": "read_profile_dump",
-          "description": "Reads heap profile data",
-          "parameters": { "type": "object", "properties": { "path": { "type": "string" } } }
-        }
-      ]
+      "system": "You are a code refactoring agent.",
+      "messages": [{ "role": "user", "content": "Update token verification logic." }],
+      "tools": []
     },
     "output": {
-      "content": [
-        {
-          "type": "tool_use",
-          "id": "toolu_01",
-          "name": "read_profile_dump",
-          "input": { "path": "/var/log/heap.heapsnapshot" }
-        }
-      ],
-      "stopReason": "tool_use",
-      "usage": {
-        "promptTokens": 850,
-        "completionTokens": 45,
-        "totalTokens": 895
-      }
+      "content": [{ "type": "text", "text": "Token verification updated." }],
+      "stopReason": "end_turn",
+      "usage": { "promptTokens": 450, "completionTokens": 80, "totalTokens": 530 }
     },
     "metadata": {
-      "costEstimate": 0.0032
+      "costEstimate": 0.0025
     }
   }
 }
 ```
-
-### 8.3 Configuration Schema (`agentlog.config.ts`)
-```ts
-export interface AgentlogConfig {
-  sessionDir?: string;        // Default: ".agentlog/sessions"
-  exportDir?: string;         // Default: "./agentlog-exports"
-  redact?: {
-    enabled: boolean;         // Default: true
-    patterns?: RegExp[];      // Custom regexes appended to default suite
-  };
-  defaultProvider?: "anthropic" | "openai" | "deepseek" | "gemini";
-  share?: {
-    provider: "gist";
-  };
-}
-```
-
----
-
-## 9. Key Architectural Decisions and Trade-Offs
-
-### Decision 1: Append-Only Local NDJSON vs. Embedded SQLite Database
-- **Context:** Traces must be saved reliably across varying operating systems and runtime environments without requiring compilation tools (node-gyp, native SQLite bindings).
-- **Choice:** Local newline-delimited JSON (`.ndjson`) files in `.agentlog/sessions/`.
-- **Trade-offs:**
-  - *Gained:* Zero binary dependencies, full streaming crash durability (a process kill does not corrupt prior lines), native compatibility with standard Unix utilities (`grep`, `jq`, `wc -l`), and effortless manual inspection.
-  - *Lost:* Lack of SQL indexing across millions of calls. Acceptable because sessions are reviewed individually or in batches under 1,000 files.
-
-### Decision 2: Wrapper Proxy vs. Global Fetch Monkey-Patching
-- **Context:** To capture API calls, the system could intercept `globalThis.fetch` or wrap client instances directly.
-- **Choice:** Explicit `wrap(client)` function returning typed proxy client.
-- **Trade-offs:**
-  - *Gained:* Zero side effects on unrelated application networking (e.g., database requests, analytics, webhooks). Predictable behavior in complex microservices. Full TypeScript type preservation.
-  - *Lost:* Requires two lines of explicit developer code instead of zero-code ambient process hooking. Ambient proxying is reserved as an advanced opt-in mode.
-
-### Decision 3: Client-Side LLM Synthesis vs. Hosted SaaS Ingestion
-- **Context:** Transforming raw logs into clean narrative summaries requires an LLM call.
-- **Choice:** Run the export synthesis step directly on the developer's machine using their existing environment API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`).
-- **Trade-offs:**
-  - *Gained:* Zero infrastructure costs, zero user accounts, complete privacy (prompts and code traces never traverse our servers), and compliance with strict enterprise confidentiality constraints.
-  - *Lost:* Users must have a configured API key to run AI synthesis during export. Fallback mode outputs structured call inspection cards without narrative summaries if keys are absent.
-
-### Decision 4: Single-File Inlined HTML Reports vs. Web Dashboard
-- **Context:** Exported reports need to be reviewed by teammates, interviewers, and clients.
-- **Choice:** Self-contained `.html` file with embedded CSS, SVG icons, and vanilla JavaScript for timeline toggles.
-- **Trade-offs:**
-  - *Gained:* Can be emailed, attached to pull requests, committed to repositories, viewed offline on airplanes, or hosted on static storage (GitHub Pages, S3, Cloudflare Pages) with zero hosting costs.
-  - *Lost:* No real-time multi-user live collaborative commenting without saving updated files.
-
-### Decision 5: Peer Dependencies vs. Direct Bundling of Provider SDKs
-- **Context:** The package supports Anthropic, OpenAI, DeepSeek, and Vercel AI SDK.
-- **Choice:** Declare `@anthropic-ai/sdk` and `openai` as optional peer dependencies (`peerDependenciesMeta`).
-- **Trade-offs:**
-  - *Gained:* Minimal install footprint. A project using only Anthropic does not install OpenAI SDK packages or transitive dependencies.
-  - *Lost:* Dynamic type inference must use generic shapes (`AnthropicClientLike`, `OpenAIClientLike`) to maintain strict typing when peer packages are omitted.
-
----
-
-## 10. Reliability, Privacy, and Failure Handling
-
-| Component | Failure Mode | Mitigation |
-|---|---|---|
-| **Capture Layer** | Agent process crashes or runs out of memory mid-turn | Append-only NDJSON guarantees all previously completed calls remain valid and readable on disk. |
-| **Capture Layer** | Upstream provider returns 4xx / 5xx API error | Adapter intercepts the rejection, records the error string in the call record, writes the record to disk, and rethrows the original error untouched. |
-| **Redaction Pipeline** | Large payload with deeply nested data structures | Recursive walker terminates at safe depth limits; regex patterns run per string primitive to prevent stack overflow. |
-| **Pricing Engine** | Novel or uncataloged model identifier passed | Engine returns `null` for estimated cost and logs `Cost unknown` instead of crashing runtime operations. |
-| **Export Renderer** | Developer has no internet connection or missing API key | CLI gracefully falls back to raw structured timeline HTML output without narrative synthesis. |
-| **Disk I/O** | Destination directory `.agentlog/` does not exist | Session writer invokes recursive directory creation (`mkdirSync({ recursive: true })`) prior to initial write. |
-
----
-
-## 11. Security and Credential Isolation
-
-- **In-Memory Sanitization:** Redaction executes prior to `fs.appendFileSync`. Raw API keys never touch persistent disk storage.
-- **Zero Ingestion Servers:** The package does not contain network telemetry or cloud ingestion URLs.
-- **Git Protection:** The `init` command checks the project's `.gitignore` and appends `.agentlog/` and `agentlog-exports/` to prevent accidental commits of local session files.
-
----
-
-## 12. Diagram Prompts
-
-### High-Level Ingestion Flow
-> Left-to-right system architecture diagram:
-> Client App -> `wrap(client)` Proxy -> Upstream AI Provider (OpenAI/Anthropic)
-> Output returns through Redaction Pipeline -> Local NDJSON Writer -> `.agentlog/sessions/*.ndjson`
-> Decoupled CLI Export reads NDJSON -> LLM Synthesis -> Self-Contained HTML.
-
-### Export Pipeline Flow
-> Top-to-bottom pipeline:
-> CLI `agentlog export` -> Session Selector -> Template Resolver (`interview` / `debug` / `audit` / `portfolio`) -> Local LLM Synthesis with user API key -> HTML Compilation -> Standalone Output File.
