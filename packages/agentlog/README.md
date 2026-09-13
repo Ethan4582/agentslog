@@ -1,6 +1,6 @@
 # agent-logs
 
-Zero-config AI session logger. Wrap once, export anywhere.
+Log AI agent sessions locally. Wrap once, export anywhere.
 
 ## Installation
 
@@ -32,7 +32,7 @@ const client = wrap(new OpenAI());
 
 ### 2. Run your agent normally
 
-Every call is captured silently to `.agentlog/sessions/` with secrets scrubbed automatically.
+Calls are saved automatically to `.agentlog/sessions/` with secrets removed.
 
 ### 3. Inspect and export
 
@@ -40,7 +40,7 @@ Every call is captured silently to `.agentlog/sessions/` with secrets scrubbed a
 # List captured sessions
 npx agent-logs sessions
 
-# Export session to a self-contained HTML file
+# Export session to a standalone HTML file
 npx agent-logs export
 ```
 
@@ -56,9 +56,9 @@ npx agent-logs export
 
 ## Features
 
-- **Single-line wrap:** Works with Anthropic, OpenAI, DeepSeek, and Vercel AI SDK.
-- **Append-only streaming:** Saves to local NDJSON so traces survive process crashes.
-- **In-memory redaction:** Strips API keys, Bearer tokens, and emails before saving.
-- **Token cost tracking:** Built-in pricing for Claude, GPT, DeepSeek, and Gemini models.
-- **Self-contained HTML:** Generates standalone reports without external runtime dependencies.
-- **Zero telemetry:** 100% local and offline.
+- **One-line setup:** Works with Anthropic, OpenAI, DeepSeek, and Vercel AI SDK.
+- **Crash-safe:** Saves each call immediately to disk so you never lose data if your script crashes.
+- **Automatic secret redaction:** Removes API keys, tokens, and emails before anything is saved.
+- **Cost tracking:** Estimates token usage and costs for Claude, GPT, DeepSeek, and Gemini models.
+- **Standalone HTML exports:** Generates clean reports you can open in any browser.
+- **100% local:** No accounts, no cloud setup, and no telemetry.
