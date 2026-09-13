@@ -3,11 +3,11 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
   output: "export",
-  distDir: "out",
   trailingSlash: true,
   images: {
     unoptimized: true
-  }
+  },
+  outputFileTracingRoot: path.resolve(__dirname)
 };
 
 export default nextConfig;

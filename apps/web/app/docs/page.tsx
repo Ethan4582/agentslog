@@ -1,8 +1,26 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Terminal, Shield, FileText, Cpu, CheckCircle2 } from "lucide-react";
+import { Terminal, Shield, FileText, Cpu } from "lucide-react";
 
 export default function DocsPage() {
+  const codeSnippet = `import Anthropic from '@anthropic-ai/sdk';
+import { wrap } from 'agentlog';
+
+const client = wrap(new Anthropic());
+
+const response = await client.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  messages: [{ role: 'user', content: 'Hello' }]
+});`;
+
+  const configSnippet = `export default {
+  sessionDir: '.agentlog/sessions',
+  redact: {
+    enabled: true,
+    patterns: [/custom-token-[0-9]+/g]
+  }
+};`;
+
   return (
     <div className="flex min-h-screen flex-col bg-[#121212] text-[#ededed]">
       <Navbar />
@@ -40,14 +58,10 @@ export default function DocsPage() {
             <p className="text-[15px] text-[#a0a0a0]">
               Wrap your client instance in one line. All method signatures and TypeScript definitions remain identical:
             </p>
-            <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] text-[#d4d4d4] leading-relaxed">
-              <span className="text-purple-400">import</span> Anthropic <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;@anthropic-ai/sdk&apos;</span>;{"\n"}
-              <span className="text-purple-400">import</span> {"{ wrap }"} <span className="text-purple-400">from</span> <span className="text-emerald-400">&apos;agentlog&apos;</span>;{"\n\n"}
-              <span className="text-blue-400">const</span> client = <span className="text-amber-400">wrap</span>(<span className="text-blue-400">new</span> Anthropic());{"\n\n"}
-              <span className="text-blue-400">const</span> response = <span className="text-purple-400">await</span> client.messages.<span className="text-amber-400">create</span>({"{"}{"\n"}
-              {"  "}model: <span className="text-emerald-400">&apos;claude-3-5-sonnet-20241022&apos;</span>,{"\n"}
-              {"  "}messages: [&#123; role: <span className="text-emerald-400">&apos;user&apos;</span>, content: <span className="text-emerald-400">&apos;Hello&apos;</span> &#125;]{"\n"}
-              {"}"});
+            <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] text-[#d4d4d4] leading-relaxed overflow-x-auto">
+              <pre>
+                <code>{codeSnippet}</code>
+              </pre>
             </div>
           </section>
 
@@ -124,14 +138,10 @@ export default function DocsPage() {
             <p className="text-[15px] text-[#a0a0a0]">
               Sensitive tokens are never persisted unredacted. Patterns for API keys (`sk-...`), Bearer tokens, emails, and credit cards are scrubbed client-side. Customize via `agentlog.config.ts`:
             </p>
-            <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] text-[#d4d4d4] leading-relaxed">
-              <span className="text-blue-400">export default</span> {"{\n"}
-              {"  "}sessionDir: <span className="text-emerald-400">&apos;.agentlog/sessions&apos;</span>,{"\n"}
-              {"  "}redact: {"{\n"}
-              {"    "}enabled: <span className="text-amber-400">true</span>,{"\n"}
-              {"    "}patterns: [/custom-token-[0-9]+/g]{"\n"}
-              {"  }"}{"\n"}
-              {"};"}
+            <div className="rounded-xl border border-[#262626] bg-[#161616] p-4 font-mono text-[13px] text-[#d4d4d4] leading-relaxed overflow-x-auto">
+              <pre>
+                <code>{configSnippet}</code>
+              </pre>
             </div>
           </section>
         </div>
