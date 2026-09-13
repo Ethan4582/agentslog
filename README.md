@@ -3,7 +3,7 @@
 A zero-overhead, local-first capture and export tool for AI agent sessions. Wrap your client in one line, record calls silently to disk, and export self-contained HTML traces for code reviews, interviews, and audits.
 
 <!-- Replace with landing page screenshot or demo video -->
-![agentlog Landing Page Preview](assets/applogo.png)
+![agentlog Landing Page Preview](assets/hero.png)
 
 ---
 
